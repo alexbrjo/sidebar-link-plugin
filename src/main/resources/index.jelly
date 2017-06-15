@@ -1,3 +1,6 @@
-<div>
-  Add links in the sidebar of the Jenkins main page, view tabs and project pages.
-</div>
+<?jelly escape-by-default='true'?>
+<j:jelly xmlns:j="jelly:core" xmlns:st="jelly:stapler" xmlns:l="/lib/layout" xmlns:f="/lib/form">
+    <div>
+      Add links in the sidebar of the Jenkins main page, view tabs and project pages.
+    </div>
+</j:jelly>

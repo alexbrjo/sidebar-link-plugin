@@ -24,10 +24,8 @@
 package hudson.plugins.sidebar_link;
 
 import hudson.Extension;
-import hudson.model.AbstractProject;
-import hudson.model.Action;
-import hudson.model.JobProperty;
-import hudson.model.JobPropertyDescriptor;
+import hudson.model.*;
+
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
@@ -39,7 +37,7 @@ import org.kohsuke.stapler.StaplerRequest;
  * Add links in a job page sidepanel.
  * @author Alan Harder
  */
-public class ProjectLinks extends JobProperty<AbstractProject<?,?>> {
+public class ProjectLinks extends JobProperty<Job<?,?>> {
     private List<LinkAction> links = new ArrayList<LinkAction>();
 
     @DataBoundConstructor
@@ -50,7 +48,7 @@ public class ProjectLinks extends JobProperty<AbstractProject<?,?>> {
     public List<LinkAction> getLinks() { return links; }
 
     @Override
-    public Collection<? extends Action> getJobActions(AbstractProject<?,?> job) {
+    public Collection<? extends Action> getJobActions(Job<?,?> job) {
         if(links == null)
             return new ArrayList<LinkAction>();
         return links;

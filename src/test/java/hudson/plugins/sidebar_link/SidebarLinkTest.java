@@ -23,22 +23,32 @@
  */
 package hudson.plugins.sidebar_link;
 
+import com.gargoylesoftware.htmlunit.WebClient;
 import com.gargoylesoftware.htmlunit.html.HtmlAnchor;
 import com.gargoylesoftware.htmlunit.html.HtmlForm;
-import hudson.model.Hudson;
+import com.gargoylesoftware.htmlunit.html.HtmlFormUtil;
+import com.gargoylesoftware.htmlunit.html.HtmlPage;
+import jenkins.model.Jenkins;
 import net.sf.json.JSONObject;
-import org.jvnet.hudson.test.HudsonTestCase;
+import org.junit.Rule;
+import org.jvnet.hudson.test.JenkinsRule;
 import org.kohsuke.stapler.StaplerRequest;
 import org.kohsuke.stapler.StaplerResponse;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
 
 /**
  * Test interaction of sidebar-link plugin with Jenkins core.
  * @author Alan Harder
  */
-public class SidebarLinkTest extends HudsonTestCase {
+public class SidebarLinkTest {
+
+    @Rule
+    public JenkinsRule r = new JenkinsRule();
 
     public void testPlugin() throws Exception {
-        WebClient wc = new WebClient();
+        WebClient wc = r.createWebClient();
 
         // Configure plugin
         // (don't know how to use htmlunit with f:repeatable, so calling configure directly)
@@ -46,21 +56,21 @@ public class SidebarLinkTest extends HudsonTestCase {
         //..
         //submit(form);
 
-        Hudson.getInstance().getActions().add(new SidebarLinkTestAction("SidebarLinkTest"));
+        r.jenkins.getActions().add(new SidebarLinkTestAction("SidebarLinkTest"));
         // This calls action class below to call configure() (needs to be in a Stapler context)
-        wc.goTo("SidebarLinkTest");
+        wc.getPage("SidebarLinkTest");
 
         // Verify link appears on main page
-        HtmlAnchor link = wc.goTo("").getFirstAnchorByText("Test Link");
+        HtmlAnchor link = ((HtmlPage) wc.getPage("")).getAnchorByText("Test Link");
         assertNotNull("link missing on main page", link);
         assertEquals("main page href", "http://test.com/test", link.getHrefAttribute());
 
         // Create view and verify link appears on other view tabs too
-        HtmlForm form = wc.goTo("newView").getFormByName("createItem");
+        HtmlForm form = ((HtmlPage) wc.getPage("newView")).getFormByName("createItem");
         form.getInputByName("name").setValueAttribute("test-view");
         form.getInputByValue("hudson.model.ListView").setChecked(true);
-        submit(form);
-        link = wc.goTo("view/test-view/").getFirstAnchorByText("Test Link");
+        HtmlFormUtil.submit(form);
+        link = ((HtmlPage) wc.getPage("view/test-view/")).getAnchorByText("Test Link");
         assertNotNull("link missing on view page", link);
         assertEquals("view page href", "http://test.com/test", link.getHrefAttribute());
     }
@@ -71,7 +81,7 @@ public class SidebarLinkTest extends HudsonTestCase {
             JSONObject formData = new JSONObject();
             formData.put("links", JSONObject.fromObject(
                 new LinkAction("http://test.com/test", "Test Link", "test.gif")));
-            Hudson.getInstance().getPlugin(SidebarLinkPlugin.class).configure(req, formData);
+            Jenkins.getActiveInstance().getPlugin(SidebarLinkPlugin.class).configure(req, formData);
             rsp.setContentType("text/html");
             rsp.getOutputStream().close();
         }
