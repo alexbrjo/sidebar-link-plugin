@@ -31,10 +31,12 @@ import com.gargoylesoftware.htmlunit.html.HtmlPage;
 import jenkins.model.Jenkins;
 import net.sf.json.JSONObject;
 import org.junit.Rule;
+import org.junit.Test;
 import org.jvnet.hudson.test.JenkinsRule;
 import org.kohsuke.stapler.StaplerRequest;
 import org.kohsuke.stapler.StaplerResponse;
 
+import static com.gargoylesoftware.htmlunit.html.HtmlFormUtil.submit;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 
@@ -47,8 +49,9 @@ public class SidebarLinkTest {
     @Rule
     public JenkinsRule r = new JenkinsRule();
 
+    @Test
     public void testPlugin() throws Exception {
-        WebClient wc = r.createWebClient();
+        JenkinsRule.WebClient wc = r.createWebClient();
 
         // Configure plugin
         // (don't know how to use htmlunit with f:repeatable, so calling configure directly)
@@ -58,19 +61,19 @@ public class SidebarLinkTest {
 
         r.jenkins.getActions().add(new SidebarLinkTestAction("SidebarLinkTest"));
         // This calls action class below to call configure() (needs to be in a Stapler context)
-        wc.getPage("SidebarLinkTest");
+        wc.goTo("SidebarLinkTest");
 
         // Verify link appears on main page
-        HtmlAnchor link = ((HtmlPage) wc.getPage("")).getAnchorByText("Test Link");
+        HtmlAnchor link = wc.goTo("").getAnchorByText("Test Link");
         assertNotNull("link missing on main page", link);
         assertEquals("main page href", "http://test.com/test", link.getHrefAttribute());
 
         // Create view and verify link appears on other view tabs too
-        HtmlForm form = ((HtmlPage) wc.getPage("newView")).getFormByName("createItem");
+        HtmlForm form = wc.goTo("newView").getFormByName("createItem");
         form.getInputByName("name").setValueAttribute("test-view");
         form.getInputByValue("hudson.model.ListView").setChecked(true);
-        HtmlFormUtil.submit(form);
-        link = ((HtmlPage) wc.getPage("view/test-view/")).getAnchorByText("Test Link");
+        submit(form);
+        link = wc.goTo("view/test-view/").getAnchorByText("Test Link");
         assertNotNull("link missing on view page", link);
         assertEquals("view page href", "http://test.com/test", link.getHrefAttribute());
     }
