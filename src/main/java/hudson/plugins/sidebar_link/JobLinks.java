@@ -1,7 +1,7 @@
 /*
  * The MIT License
  *
- * Copyright (c) 2011, Alan Harder
+ * Copyright (c) 2017, CloudBees, Inc.
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -24,31 +24,23 @@
 package hudson.plugins.sidebar_link;
 
 import hudson.Extension;
-import hudson.model.*;
+import hudson.model.Job;
+import hudson.model.JobPropertyDescriptor;
+import jenkins.model.TransientActionFactory;
+import org.kohsuke.stapler.DataBoundConstructor;
 
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 
-import jenkins.model.TransientActionFactory;
-import org.kohsuke.stapler.DataBoundConstructor;
-
 /**
- * Add links in a job page sidepanel.
- * @author Alan Harder
+ * @author Alex Johnson
  */
-public class ProjectLinks extends AbstractJobLinks<AbstractProject<?, ?>> {
-
-    private List<LinkAction> links = new ArrayList<LinkAction>();
+public class JobLinks extends AbstractJobLinks<Job<?, ?>> {
 
     @DataBoundConstructor
-    public ProjectLinks(List<LinkAction> links) {
+    public JobLinks(List<LinkAction> links) {
         super(links);
-    }
-
-    private Object readResolve() {
-        return this;
     }
 
     @Override
@@ -57,19 +49,19 @@ public class ProjectLinks extends AbstractJobLinks<AbstractProject<?, ?>> {
     }
 
     @Extension(optional = true)
-    public static class TransientActionFactoryImpl extends TransientActionFactory<AbstractProject> {
-
+    public static class TransientActionFactoryImpl extends TransientActionFactory<Job> {
         @Override
-        public Class<AbstractProject> type() {
-            return AbstractProject.class;
+        public Class<Job> type() {
+            return Job.class;
         }
 
-        public Collection<LinkAction> createFor(AbstractProject job) {
-            ProjectLinks links = (ProjectLinks) job.getProperty(ProjectLinks.class);
+        public Collection<LinkAction> createFor(Job job) {
+            JobLinks links = (JobLinks) job.getProperty(JobLinks.class);
             if (links == null) {
                 return Collections.emptyList();
             }
             return Collections.unmodifiableList(links.getLinks());
         }
     }
+
 }

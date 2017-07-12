@@ -1,7 +1,7 @@
 /*
  * The MIT License
  *
- * Copyright (c) 2011, Alan Harder
+ * Copyright (c) 2017, CloudBees, Inc.
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -25,51 +25,50 @@ package hudson.plugins.sidebar_link;
 
 import hudson.Extension;
 import hudson.model.*;
+import net.sf.json.JSONObject;
+import org.kohsuke.stapler.StaplerRequest;
 
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 
-import jenkins.model.TransientActionFactory;
-import org.kohsuke.stapler.DataBoundConstructor;
-
 /**
- * Add links in a job page sidepanel.
- * @author Alan Harder
+ * Sidebar links for a Job
+ *
+ * @author Alex Johnson
  */
-public class ProjectLinks extends AbstractJobLinks<AbstractProject<?, ?>> {
+public abstract class AbstractJobLinks<T extends Job<?, ?>> extends JobProperty<T> {
 
     private List<LinkAction> links = new ArrayList<LinkAction>();
 
-    @DataBoundConstructor
-    public ProjectLinks(List<LinkAction> links) {
-        super(links);
+    public AbstractJobLinks(List<LinkAction> links) {
+        this.links = links != null ? links : new ArrayList<LinkAction>();
     }
 
-    private Object readResolve() {
-        return this;
-    }
+    @Deprecated
+    public void arbitraryMethod(){}
+
+    public List<LinkAction> getLinks() { return links; }
 
     @Override
-    public JobPropertyDescriptor getDescriptor () {
-        return new AbstractJobLinks.DescriptorImpl();
+    public Collection<? extends Action> getJobActions(T job) {
+        return Collections.EMPTY_SET;
     }
 
-    @Extension(optional = true)
-    public static class TransientActionFactoryImpl extends TransientActionFactory<AbstractProject> {
+    @Extension
+    public static class DescriptorImpl extends JobPropertyDescriptor {
+        @Override
+        public String getDisplayName() {
+            return "Sidebar Links";
+        }
 
         @Override
-        public Class<AbstractProject> type() {
-            return AbstractProject.class;
-        }
-
-        public Collection<LinkAction> createFor(AbstractProject job) {
-            ProjectLinks links = (ProjectLinks) job.getProperty(ProjectLinks.class);
-            if (links == null) {
-                return Collections.emptyList();
-            }
-            return Collections.unmodifiableList(links.getLinks());
+        public AbstractJobLinks newInstance(StaplerRequest req, JSONObject formData) throws FormException {
+            return formData.has("sidebar-links")
+                    ? req.bindJSON(ProjectLinks.class, formData.getJSONObject("sidebar-links"))
+                    : null;
         }
     }
+
 }
