@@ -51,36 +51,36 @@ import java.util.Set;
  *
  * @author Alex Johnson
  */
-public class SidebarLinkStep extends Step {
+public class SidebarLinkRemoveStep extends Step {
 
-    private String urlName;
-    private String displayName;
-    private String iconFileName = "clipboard.png"; // default image
+    private String urlRegex;
+    private String displayNameRegex;
+    private String iconFileNameRegex;
 
     private boolean jobPage = false;
     private boolean buildPage = true;
 
     @DataBoundConstructor
-    public SidebarLinkStep (String urlName) {
-        this.urlName = urlName;
+    public SidebarLinkRemoveStep(String urlRegex) {
+        this.urlRegex = urlRegex;
     }
 
     @DataBoundSetter
-    public void setDisplayName (String displayName) {
-        this.displayName = displayName;
+    public void setDisplayNameRegex (String displayNameRegex) {
+        this.displayNameRegex = displayNameRegex;
     }
 
-    public String getDisplayName () {
-        return displayName;
+    public String getDisplayNameRegex () {
+        return displayNameRegex;
     }
 
     @DataBoundSetter
-    public void setIconFileName (String iconFileName) {
-        this.iconFileName = iconFileName;
+    public void setIconFileNameRegex (String iconFileNameRegex) {
+        this.iconFileNameRegex = iconFileNameRegex;
     }
 
     public String getIconFileName () {
-        return iconFileName;
+        return iconFileNameRegex;
     }
 
     @DataBoundSetter
@@ -106,7 +106,7 @@ public class SidebarLinkStep extends Step {
      */
     @Override
     public StepExecution start(StepContext context) throws Exception {
-        return new SidebarLinkStepExecution(context, urlName, displayName, iconFileName, jobPage, buildPage);
+        return new SidebarLinkStepExecution(context, urlRegex, displayNameRegex, iconFileNameRegex, jobPage, buildPage);
     }
 
     @Extension
@@ -119,33 +119,33 @@ public class SidebarLinkStep extends Step {
 
         @Override
         public String getFunctionName() {
-            return "sidebarLink";
+            return "sidebarLinkRm";
         }
 
         @Override
         public String getDisplayName() {
-            return "Sidebar Link";
+            return "Remove Sidebar Links";
         }
     }
 
     public static class SidebarLinkStepExecution extends StepExecution {
 
-        protected String urlName;
-        protected String displayName;
-        protected String iconFileName;
+        protected String urlRegex;
+        protected String displayNameRegex;
+        protected String iconFileNameRegex;
         protected boolean jobPage;
         protected boolean buildPage;
 
-        public SidebarLinkStepExecution (StepContext context, String urlName, String displayName, String iconFileName,
-                              boolean jobPage, boolean buildPage) {
+        public SidebarLinkStepExecution (StepContext context, String urlRegex, String displayNameRegex,
+                                         String iconFileNameRegex, boolean jobPage, boolean buildPage) {
             super(context);
-            this.urlName = urlName;
-            this.displayName = displayName;
-            this.iconFileName = iconFileName;
+            this.urlRegex = urlRegex;
+            this.displayNameRegex = displayNameRegex;
+            this.iconFileNameRegex = iconFileNameRegex;
             this.jobPage = jobPage;
             this.buildPage = buildPage;
-            if (displayName == null) {
-                this.displayName = urlName;
+            if (displayNameRegex == null) {
+                this.displayNameRegex = urlRegex;
             }
         }
 
@@ -161,10 +161,17 @@ public class SidebarLinkStep extends Step {
                 targets.add(getContext().get(Run.class));
             }
 
-            // TODO single LinkAction instance or different for each target?
-            LinkAction linkAction = new LinkAction(urlName, displayName, iconFileName);
             for (Actionable a : targets) {
-                a.addAction(linkAction);
+                List<LinkAction> links = a.getActions(LinkAction.class);
+                for (LinkAction link : links) {
+                    if (urlRegex == null || link.getUnprotectedUrlName().matches(urlRegex)) {
+                        if (displayNameRegex == null || link.getDisplayName().matches(displayNameRegex)) {
+                            if (iconFileNameRegex == null || link.getIconFileName().matches(iconFileNameRegex)) {
+                                links.remove(link); // remove while iterating, ok?
+                            }
+                        }
+                    }
+                }
             }
 
             getContext().onSuccess(Result.SUCCESS);
